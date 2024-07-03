@@ -1,17 +1,17 @@
 extension InputValidator on String {
   //crate extension for input name minimal 3 character maksimal 50 character and must be alphabet
   bool get isValidName {
-    final RegExp _nameRegExp = RegExp(
+    final RegExp nameRegExp = RegExp(
       r'^[a-zA-Z ]{3,50}$',
     );
-    return _nameRegExp.hasMatch(this);
+    return nameRegExp.hasMatch(this);
   }
 
   bool get isValidEmail {
-    final RegExp _emailRegExp = RegExp(
+    final RegExp emailRegExp = RegExp(
       r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+',
     );
-    return _emailRegExp.hasMatch(this);
+    return emailRegExp.hasMatch(this);
   }
 
   // bool get isValidPassword {
