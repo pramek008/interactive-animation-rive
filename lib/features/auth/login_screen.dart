@@ -1,12 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:rive/rive.dart';
-import 'package:rive_auth_app/features/auth/bloc/auth_bloc.dart';
+
 import 'package:rive_auth_app/utils/validator.dart';
 
-import '../../client/service_locator.dart';
 import '../../utils/theme.dart';
 import '../../widgets/btn_widget.dart';
 import '../../widgets/text_form_field.dart';
@@ -23,7 +22,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  GoRouter router = locator.get<GoRouter>();
+
   late bool _obscureText = true;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -81,19 +80,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void wrongState() {
+    isChecking?.change(false);
     isHandsUp?.change(false);
+    setState(() {});
     failTrigger?.fire();
   }
 
-  void loginClick() {
+  void successState() {
     isChecking?.change(false);
     isHandsUp?.change(false);
-    if (_emailController.text == "email" &&
-        _passwordController.text == "pass") {
-      successTrigger?.fire();
-    } else {
-      failTrigger?.fire();
-    }
+    successTrigger?.fire();
     setState(() {});
   }
 
@@ -106,12 +102,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    void _toggle() {
-      setState(() {
-        _obscureText = !_obscureText;
-      });
-    }
-
     Widget heading() => Container(
           margin: EdgeInsets.only(
             top: 30,
@@ -175,6 +165,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     onTap: handsUpOnEyes,
                     controller: _passwordController,
                     isPassword: _obscureText,
+                    onChanged: (p0) {
+                      handsUpOnEyes();
+                    },
                     validator: (validator) {
                       if (validator!.isEmpty) {
                         return 'Password is required';
@@ -184,6 +177,39 @@ class _LoginScreenState extends State<LoginScreen> {
                           return 'Password must be at least 8 characters';
                         } else {
                           return null;
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(
+                    height: 16,
+                  ),
+                  CustomButtonWidget(
+                    btnName: 'Login',
+                    width: defaultMargin,
+                    statusColor: true,
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        String email = "email@mail.com";
+                        String password = "pass1234";
+
+                        if (_emailController.text == email &&
+                            _passwordController.text == password) {
+                          successState();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              backgroundColor: Colors.green,
+                              content: Text('Login Success'),
+                            ),
+                          );
+                        } else {
+                          wrongState();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              backgroundColor: Colors.red,
+                              content: Text('Login Failed'),
+                            ),
+                          );
                         }
                       }
                     },
@@ -205,146 +231,6 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(
                 height: 45,
               ),
-              BlocConsumer<AuthBloc, AuthState>(
-                listener: (context, state) {
-                  print(state);
-                  state.maybeWhen(
-                    success: () {
-                      isChecking?.change(false);
-                      isHandsUp?.change(false);
-                      successTrigger?.fire();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Login Success'),
-                          backgroundColor: greenColor.withOpacity(0.7),
-                        ),
-                      );
-                      // router.goNamed(HomeScreen.routeName);
-                    },
-                    error: (message) {
-                      // isChecking?.change(false);
-                      // isHandsUp?.change(false);
-                      // failTrigger?.fire();
-                      wrongState();
-                      setState(() {});
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(message),
-                          backgroundColor: redColor.withOpacity(0.7),
-                        ),
-                      );
-                    },
-                    orElse: () {}, // Handle other states if necessary
-                  );
-                },
-                builder: (context, state) {
-                  return state.maybeWhen(
-                    initial: () {
-                      return CustomButtonWidget(
-                        btnName: 'Login',
-                        width: defaultMargin,
-                        statusColor: true,
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            context.read<AuthBloc>().add(
-                                  AuthEvent.login(
-                                    username: _emailController.text.trim(),
-                                    password: _passwordController.text.trim(),
-                                  ),
-                                );
-                          } else {
-                            wrongState();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                    'Please fill the form correctly'),
-                                backgroundColor: redColor.withOpacity(0.7),
-                              ),
-                            );
-                          }
-                        },
-                      );
-                    },
-                    loading: () {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    },
-                    error: (message) {
-                      wrongState();
-                      return CustomButtonWidget(
-                        btnName: 'Login',
-                        width: defaultMargin,
-                        statusColor: true,
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            context.read<AuthBloc>().add(
-                                  AuthEvent.login(
-                                    username: _emailController.text.trim(),
-                                    password: _passwordController.text.trim(),
-                                  ),
-                                );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                    'Please fill the form correctly'),
-                                backgroundColor: redColor.withOpacity(0.7),
-                              ),
-                            );
-                          }
-                        },
-                      );
-                    },
-                    orElse: () {
-                      return const SizedBox();
-                    },
-                  );
-                },
-              ),
-
-              // BlocConsumer<AuthCubit, AuthState>(
-              //   listener: (context, state) {
-              //     if (state is AuthSuccess) {
-              //       Navigator.pushAndRemoveUntil(
-              //           context,
-              //           MaterialPageRoute(builder: (context) => HomeScreen()),
-              //           (route) => false);
-              //     } else if (state is AuthFailed) {
-              //       ScaffoldMessenger.of(context).showSnackBar(
-              //         SnackBar(
-              //           content: Text(state.message),
-              //           backgroundColor: redColor.withOpacity(0.7),
-              //         ),
-              //       );
-              //     }
-              //   },
-              //   builder: (context, state) {
-              //     if (state is AuthLoading) {
-              //       return const CircularProgressIndicator();
-              //     }
-              //     return CustomButtonWidget(
-              //         btnName: 'Login',
-              //         btnColor: blackColor,
-              //         width: defaultMargin,
-              //         statusColor: true,
-              //         onPressed: () {
-              //           if (_formKey.currentState!.validate()) {
-              //             context.read<AuthCubit>().signIn(
-              //                   email: _emailController.text.trim(),
-              //                   password: _passwordController.text.trim(),
-              //                 );
-              //           } else {
-              //             ScaffoldMessenger.of(context).showSnackBar(
-              //               SnackBar(
-              //                 content: Text('Please fill the form correctly'),
-              //                 backgroundColor: redColor.withOpacity(0.7),
-              //               ),
-              //             );
-              //           }
-              //         });
-              //   },
-              // )
             ],
           ),
         ),
