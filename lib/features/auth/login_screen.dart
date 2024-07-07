@@ -26,11 +26,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
   var assetsRive = 'assets/animated_login_character.riv';
+
+  StateMachineController? stateMachineController;
+  Artboard? artboard;
+
   SMITrigger? failTrigger, successTrigger;
   SMIBool? isHandsUp, isChecking;
   SMINumber? lookNum;
-  StateMachineController? stateMachineController;
-  Artboard? artboard;
 
   @override
   void initState() {
